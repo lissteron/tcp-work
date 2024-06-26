@@ -1,0 +1,47 @@
+services:
+  client:
+    build:
+      context: .
+      dockerfile: build.Dockerfile
+    tty: true
+    working_dir: /src
+    environment:
+      - SERVER_TCP_ADDR=server:8080
+    volumes:
+      - ./:/src
+      - go-mod-cache:/go/pkg
+      - go-build-cache:/root/.cache/go-build
+    depends_on:
+      server:
+        condition: service_started
+
+  server:
+    build:
+      context: .
+      dockerfile: build.Dockerfile
+    tty: true
+    working_dir: /src
+    command: [
+      "go", "run", "cmd/tcp-work/main.go", "server"
+    ]
+    volumes:
+      - ./:/src
+      - go-mod-cache:/go/pkg
+      - go-build-cache:/root/.cache/go-build
+
+  linter:
+    image: golangci/golangci-lint:v1.59.0-alpine
+    working_dir: /src
+    volumes:
+      - ./:/src
+      - go-mod-cache:/go/pkg
+      - go-build-cache:/root/.cache/go-build
+      - go-lint-cache:/root/.cache/golangci-lint
+
+volumes:
+  go-mod-cache:
+    external: true
+  go-build-cache:
+    external: true
+  go-lint-cache:
+    external: true
